@@ -1,12 +1,12 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
+    <h1>{{ msg }}111</h1>
+    <!-- <p>
       For a guide and recipes on how to configure / customize this project,<br>
       check out the
       <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
+    </p> -->
+    <!-- <h3>Installed CLI Plugins</h3>
     <ul>
       <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
       <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-router" target="_blank" rel="noopener">router</a></li>
@@ -21,28 +21,105 @@
       <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
       <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
     </ul>
-    <h3>Ecosystem</h3>
-    <ul>
+    <h3>Ecosystem</h3> -->
+    <!-- <ul>
       <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
       <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
       <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
       <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
       <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+    </ul> -->
   </div>
 </template>
 
 <script>
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 export default {
   name: 'HelloWorld',
   props: {
     msg: String
+  },
+  data() {
+    return {
+      scene: null,
+      renderer: null,
+      camera: null
+    }
+  },
+  mounted() {
+    this.init()
+  },
+  methods: {
+    async init() {
+      this.createScene();
+      await this.create();
+      this.createLight();
+      this.createCamera();
+      this.createRender();
+      this.render();
+    },
+    createScene() {
+      this.scene = new THREE.Scene(); 
+    },
+    // create() {
+    //   let geometry = new THREE.BoxGeometry(100, 100, 100);
+    //   let material = new THREE.MeshLambertMaterial({
+    //     color: 0x0000ff,
+    //   }); //材质对象Material
+    //   let mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+    //   this.scene.add(mesh); //网格模型添加到场景中
+    // },
+    async create() {
+      const fbxLoader = new FBXLoader();
+      const fbx = await fbxLoader.loadAsync('../static/models/syg06.fbx');
+      // const fbx2 = await fbxLoader.loadAsync('../static/models/touming02.fbx')
+      fbx.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      this.scene.add(fbx);
+    },
+    createLight() {
+      let point = new THREE.PointLight(0xffffff);
+      point.position.set(400, 200, 300);
+      this.scene.add(point);
+      let ambient = new THREE.AmbientLight(0x444444);
+      this.scene.add(ambient);
+    },
+    createCamera() {
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      let k = width / height;
+      let s = 200;
+      this.camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 1000);
+      this.camera.position.set(200, 300, 200);
+      this.camera.lookAt(this.scene.position);
+    },
+    createRender() {
+      this.renderer = new THREE.WebGLRenderer();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setClearColor(0xb9d3ff, 1);
+      document.body.appendChild(this.renderer.domElement);
+    },
+    render() {
+      this.renderer.render(this.scene, this.camera);
+      requestAnimationFrame(this.render);
+    }
   }
+
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+body {
+  margin: 0;
+  overflow: hidden;
+}
 h3 {
   margin: 40px 0 0;
 }
