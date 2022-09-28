@@ -1,6 +1,6 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}111</h1>
+    <!-- <h1>{{ msg }}111</h1> -->
     <!-- <p>
       For a guide and recipes on how to configure / customize this project,<br>
       check out the
@@ -59,22 +59,16 @@ export default {
       this.createCamera();
       this.createRender();
       this.render();
+      let controls = new OrbitControls(this.camera, this.renderer.domElement);
+      controls.addEventListener("change", this.render);
     },
     createScene() {
       this.scene = new THREE.Scene(); 
     },
-    // create() {
-    //   let geometry = new THREE.BoxGeometry(100, 100, 100);
-    //   let material = new THREE.MeshLambertMaterial({
-    //     color: 0x0000ff,
-    //   }); //材质对象Material
-    //   let mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
-    //   this.scene.add(mesh); //网格模型添加到场景中
-    // },
     async create() {
       const fbxLoader = new FBXLoader();
       const fbx = await fbxLoader.loadAsync('../static/models/syg06.fbx');
-      // const fbx2 = await fbxLoader.loadAsync('../static/models/touming02.fbx')
+      console.log(fbx);
       fbx.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
@@ -82,12 +76,19 @@ export default {
         }
       });
       this.scene.add(fbx);
+      // console.log(fbx.children);
+      let length = fbx.children.length;
+      for (let i = 0; i < length; i++) {
+        fbx.children[0].translateZ(i * 30);
+        fbx.children[0].scale.set(0.3, 0.3, 0.3);
+        this.scene.add(fbx.children[0]);
+       }
     },
     createLight() {
       let point = new THREE.PointLight(0xffffff);
       point.position.set(400, 200, 300);
       this.scene.add(point);
-      let ambient = new THREE.AmbientLight(0x444444);
+      let ambient = new THREE.AmbientLight(0xdddddd);
       this.scene.add(ambient);
     },
     createCamera() {
@@ -102,7 +103,7 @@ export default {
     createRender() {
       this.renderer = new THREE.WebGLRenderer();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setClearColor(0xb9d3ff, 1);
+      this.renderer.setClearColor(0xa0a0a0, 1);
       document.body.appendChild(this.renderer.domElement);
     },
     render() {
