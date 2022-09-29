@@ -76,13 +76,6 @@ export default {
         }
       });
       this.scene.add(fbx);
-      // console.log(fbx.children);
-      let length = fbx.children.length;
-      for (let i = 0; i < length; i++) {
-        fbx.children[0].translateZ(i * 30);
-        fbx.children[0].scale.set(0.3, 0.3, 0.3);
-        this.scene.add(fbx.children[0]);
-       }
     },
     createLight() {
       let point = new THREE.PointLight(0xffffff);
