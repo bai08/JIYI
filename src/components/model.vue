@@ -64,18 +64,34 @@ export default {
     },
     createScene() {
       this.scene = new THREE.Scene(); 
+      var axisHelper = new THREE.AxesHelper(250);
+      this.scene.add(axisHelper);
     },
     async create() {
       const fbxLoader = new FBXLoader();
       const fbx = await fbxLoader.loadAsync('../static/models/syg06.fbx');
-      console.log(fbx);
+      const fbx2 = await fbxLoader.loadAsync('../static/models/all.fbx');
+      console.log(fbx2);
       fbx.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
+      // fbx.rotateX(-80);
+      fbx.rotateX(-Math.PI / 2);
+      fbx.translateY(48);
+      fbx.translateZ(820);
+      fbx.translateX(-200);
+      fbx2.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        } 
+      });
       this.scene.add(fbx);
+      this.scene.add(fbx2);
+      console.log(this.scene);
     },
     createLight() {
       let point = new THREE.PointLight(0xffffff);
@@ -89,7 +105,8 @@ export default {
       let height = window.innerHeight;
       let k = width / height;
       let s = 200;
-      this.camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 1000);
+      // this.camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 1000);
+      this.camera = new THREE.PerspectiveCamera(35, k, 0.1, 100000)
       this.camera.position.set(200, 300, 200);
       this.camera.lookAt(this.scene.position);
     },
