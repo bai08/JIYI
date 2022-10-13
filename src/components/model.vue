@@ -48,11 +48,12 @@ export default {
       fbx.traverse(function (child) {
         if (child.isMesh) {
           child.castShadow = true;
-          child.receiveShadow = true;
+          child.receiveShadow = true; 
         }
       });
       fbx.rotateX(-Math.PI / 2);
-      fbx.translateY(48);
+      fbx.translateY(1);
+      fbx.scale.set(0.1, 0.1, 0.1);
       // fbx.translateZ(820);
       // fbx.translateX(-200);
       fbx2.traverse(function (child) {
@@ -61,6 +62,7 @@ export default {
           child.receiveShadow = true;
         }
       });
+      this.scene.add(fbx);
       this.scene.add(fbx2);
       console.log(this.scene);
     },
@@ -100,7 +102,7 @@ export default {
       requestAnimationFrame(this.render);
     },
     creatWater() {
-      const waterGeometry = new THREE.PlaneGeometry(245, 245);
+      const waterGeometry = new THREE.PlaneGeometry(244, 244);
       this.water = new Water(waterGeometry, {
         textureWidth: 512,
         textureHeight: 512,
@@ -112,7 +114,7 @@ export default {
         ),
         sunDirection: new THREE.Vector3(),
         sunColor: 0xffffff,
-        waterColor: 0x0043ac,
+        waterColor: 0x003896,
         distortionScale: 3.7,
         fog: this.scene.fog !== undefined,
         side: THREE.DoubleSide
