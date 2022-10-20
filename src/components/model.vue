@@ -1,12 +1,25 @@
 <template>
-  <div class="hello"></div>
+  <div id="hello">
+    <div>
+      <input type="text" v-model="params.length" />
+      <input type="text" v-model="params.width" />
+      <input type="text" v-model="params.z" />
+      <input type="text" v-model="params.num" />
+      <input type="text" v-model="params.position" />
+      <button @click="creatBelt(0)">111</button>
+      <button @click="creatBelt(1)">222</button>
+      <button @click="creatBelt(2)">333</button>
+    </div>
+  </div>
 </template>
 
 <script>
 import * as THREE from 'three';
+import { newWebSocket } from '@/utils/bwWebScocket';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { Water } from 'three/examples/jsm/objects/Water';
+import { Sky } from 'three/examples/jsm/objects/Sky.js';
 export default {
   name: 'HelloWorld',
   props: {
@@ -18,91 +31,83 @@ export default {
       renderer: null,
       camera: null,
       water: null,
-      waterArr: []
+      waterArr: [],
+      clock: new THREE.Clock(),
+      FPS: 45,
+      timeS: 0,
+      trackGroup: null,
+      params: {
+        length: 381,
+        width: 5,
+        z: 1,
+        num: 100,
+        position: 'Left',
+        obj: null
+      }
     };
   },
   mounted() {
     this.init();
+    // this.translateWs();
+    this.resizeObserver = new ResizeObserver(() => {
+      this.resizeHandle();
+    });
+    this.resizeObserver.observe(document.getElementById('hello'));
+  },
+  destroyed() {
+    this.destroyWebGL();
+    // this.resizeObserver.disconnect();
+    newWebSocket.close();
   },
   methods: {
+    translateWs() {
+      newWebSocket.init({
+        url: 'ws://192.168.1.199:8080/test', // 自己的ws 地址192.168.1.115:8082
+        onopen: (msg, data) => {
+          console.log(msg, data);
+          this.isConnect = true;
+        },
+        onmessage: (data) => {
+          console.log(data);
+          this.handleRefresh('swim');
+        },
+        onclose: (data) => {
+          console.log(data);
+        }
+      });
+      this.senData('123');
+    },
+    senData(data) {
+      if (this.sendTimeout) clearTimeout(this.sendTimeout);
+      this.sendTimeout = setTimeout(() => {
+        if (this.isConnect) {
+          newWebSocket.send(data);
+        } else {
+          this.senData(data);
+        }
+      }, 1000);
+    },
     async init() {
+      this.element = document.getElementById('hello');
       this.createScene();
-      await this.create();
-      this.creatWater();
-      this.createLight();
       this.createCamera();
+
+      //   await this.create();
+      this.createBgc();
+      this.createLight();
       this.createRender();
       this.render();
-      let controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.creatTrack();
     },
     createScene() {
       this.scene = new THREE.Scene();
-      // var axisHelper = new THREE.AxesHelper(250);
-      // this.scene.add(axisHelper);
     },
-    async create() {
+    async createBgc() {
+      const group = new THREE.Group();
       const fbxLoader = new FBXLoader();
-      const fbx = await fbxLoader.loadAsync('../static/models/syg06.fbx');
       const fbx2 = await fbxLoader.loadAsync('../static/models/map26.fbx');
-      console.log(fbx2);
-      fbx.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true; 
-        }
-      });
-      fbx.rotateX(-Math.PI / 2);
-      fbx.translateY(1);
-      fbx.scale.set(0.1, 0.1, 0.1);
-      // fbx.translateZ(820);
-      // fbx.translateX(-200);
-      fbx2.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
-      });
-      this.scene.add(fbx);
-      this.scene.add(fbx2);
-      console.log(this.scene);
-    },
-    createLight() {
-      let point = new THREE.PointLight(0xffffff);
-      point.position.set(4000, 2000, 3000);
-      this.scene.add(point);
-      let ambient = new THREE.AmbientLight(0xdddddd);
-      this.scene.add(ambient);
-    },
-    createCamera() {
-      let width = window.innerWidth;
-      let height = window.innerHeight;
-      let k = width / height;
-      this.camera = new THREE.PerspectiveCamera(35, k, 0.1, 100000);
-      this.camera.position.set(300, 400, 200);
-      this.camera.lookAt(this.scene.position);
-      this.scene.add(this.camera);
-      window.addEventListener('resize', () => {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    },
-    createRender() {
-      this.renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        logarithmicDepthBuffer: true
-      });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setClearColor(0xa0a0a0, 1);
-      document.body.appendChild(this.renderer.domElement);
-    },
-    render() {
-      this.water.material.uniforms['time'].value += 1.0 / 60;
-      this.renderer.render(this.scene, this.camera);
-      requestAnimationFrame(this.render);
-    },
-    creatWater() {
-      const waterGeometry = new THREE.PlaneGeometry(244, 244);
+      fbx2.position.z = -65;
+      const waterGeometry = new THREE.PlaneBufferGeometry(244, 244);
       this.water = new Water(waterGeometry, {
         textureWidth: 512,
         textureHeight: 512,
@@ -120,10 +125,190 @@ export default {
         side: THREE.DoubleSide
       });
       this.water.rotation.x = -Math.PI / 2;
-      this.water.position.y = 0.8;
-      this.water.position.z = 65;
-      this.scene.add(this.water);
-      this.waterArr.push(this.water);
+      this.water.position.y = 0.5;
+      group.add(fbx2);
+      group.add(this.water);
+      group.scale.set(5, 5, 5);
+      this.scene.add(group);
+
+      const sky = new Sky();
+      sky.scale.setScalar(10000);
+      this.scene.add(sky);
+
+      const sun = new THREE.Vector3();
+      const skyUniforms = sky.material.uniforms;
+
+      skyUniforms['turbidity'].value = 10;
+      skyUniforms['rayleigh'].value = 2;
+      skyUniforms['mieCoefficient'].value = 0.005;
+      skyUniforms['mieDirectionalG'].value = 0.3;
+
+      const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+      const phi = THREE.MathUtils.degToRad(87);
+      const theta = THREE.MathUtils.degToRad(180);
+
+      sun.setFromSphericalCoords(1, phi, theta);
+
+      sky.material.uniforms['sunPosition'].value.copy(sun);
+      this.water.material.uniforms['sunDirection'].value.copy(sun).normalize();
+
+      const renderTarget = pmremGenerator.fromScene(sky);
+      this.scene.environment = renderTarget.texture;
+    },
+    async create() {
+      //   const fbxLoader = new FBXLoader();
+      //   const fbx = await fbxLoader.loadAsync('../static/models/syg06.fbx');
+      //   fbx.rotateX(-Math.PI / 2);
+      //   fbx.translateY(1);
+      //   fbx.scale.set(0.1, 0.1, 0.1);
+      //   this.scene.add(fbx);
+    },
+    createLight() {
+      const direLight = new THREE.DirectionalLight(0xffffff, 1.0); // 平行光 DirectionalLight (光源颜色的RGB数值, 光源强度数值)
+      direLight.position.set(0, 1000, 0);
+      this.scene.add(direLight);
+      let ambient = new THREE.AmbientLight(0xdddddd);
+      this.scene.add(ambient);
+    },
+    createCamera() {
+      const width = this.element.clientWidth; // 窗口宽度
+      const height = this.element.clientHeight; // 窗口高度
+      let k = width / height;
+      this.camera = new THREE.PerspectiveCamera(45, k, 1, 20000);
+      this.camera.position.set(0, 150, 300);
+      this.scene.add(this.camera);
+    },
+    resizeHandle() {
+      this.camera.aspect = this.element.clientWidth / this.element.clientHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(
+        this.element.clientWidth,
+        this.element.clientHeight
+      );
+    },
+    createRender() {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer.setSize(
+        this.element.clientWidth,
+        this.element.clientHeight
+      );
+      this.renderer.setClearColor(0xa0a0a0, 1);
+      this.element.appendChild(this.renderer.domElement);
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.target = new THREE.Vector3(0, 0, -200);
+      this.controls.minDistance = 120; // 离中心物体的最近距离
+      this.controls.maxDistance = 800; //  离中心物体的最远距离
+      this.controls.maxPolarAngle = (Math.PI / 3) * 1.2; // 上下翻转的最大角度
+      this.controls.minPolarAngle = -Math.PI; // 上下翻转的最小角度
+      this.controls.update();
+    },
+    render() {
+      this.animateId = requestAnimationFrame(this.render);
+      var T = this.clock.getDelta();
+      this.timeS = this.timeS + T;
+      if (this.timeS > 1 / this.FPS) {
+        this.renderer.render(this.scene, this.camera);
+        if (this.water) {
+          this.water.material.uniforms['time'].value +=
+            1.0 / 60 / (this.FPS / 60);
+        }
+        this.timeS = 0;
+      }
+    },
+    destroyWebGL() {
+      try {
+        cancelAnimationFrame(this.animateId);
+        this.scene.traverse((child) => {
+          if (child.material) {
+            child.material.dispose();
+          }
+          if (child.geometry) {
+            child.geometry.dispose();
+          }
+          child = null;
+        });
+
+        // 场景中的参数释放清理或者置空等
+        this.renderer.forceContextLoss();
+        this.renderer.dispose();
+        this.scene.clear();
+        this.flows = [];
+        this.scene = null;
+        this.camera = null;
+        this.controls = null;
+        this.renderer.content = null;
+        this.renderer.domElement = null;
+        this.renderer = null;
+      } catch (e) {
+        console.log('Failed to destroy homepage background:', e);
+      }
+    },
+    deleteObject(obj) {
+      // 递归遍历组对象group释放所有后代网格模型绑定几何体占用内存
+      obj.geometry.dispose();
+      obj.material.dispose();
+
+      // 删除场景对象scene的子对象group
+      this.scene.remove(obj);
+    },
+    creatTrack() {
+      this.trackGroup = new THREE.Group();
+      this.trackGroup.name = 'track';
+      let track1, track2, track3;
+      track1 = new THREE.Mesh(
+        new THREE.BoxGeometry(381, 5, 1),
+        new THREE.MeshBasicMaterial({ color: 0x000000 })
+      );
+      track2 = track1.clone();
+      track3 = new THREE.Mesh(
+        new THREE.BoxGeometry(295, 5, 1),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      track1.rotation.x = -Math.PI / 2;
+      track1.position.set(-94, 10, -119);
+      track2.rotation.x = -Math.PI / 2;
+      track2.position.set(-94, 10, -170);
+      track3.rotation.x = -Math.PI / 2;
+      track3.position.set(-45, 10, -229);
+      this.trackGroup.add(track1, track2, track3);
+      this.scene.add(this.trackGroup);
+    },
+    /**
+     * @description: 添加皮带
+     * @param {*} length    皮带的长度
+     * @param {*} width     皮带的宽度
+     * @param {*} z         皮带的垂直位置
+     * @param {*} num       皮带的贴图个数
+     * @param {*} position  皮带的运行方向 上Up 下Down 左Left 右Right
+     * @param {*} obj       需要切换方向时传入对应的皮带（可以为空）
+     * @return {*} {texture: texture, model: groundBelt}
+     */
+    setTexture(length, width, z, num, position, obj) {
+      const url = require(`@/assets/3d_coalyard_images/arrow${position}.png`);
+      const texture = new THREE.TextureLoader().load(url);
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(Math.round((1 / 5) * num), 1);
+      let belt;
+      if (obj) {
+        obj.material = new THREE.MeshBasicMaterial({
+          map: texture
+        });
+        belt = obj;
+      } else {
+        belt = new THREE.Mesh(
+          new THREE.BoxGeometry(length, width, 1),
+          new THREE.MeshBasicMaterial({
+            map: texture
+          })
+        );
+      }
+      belt.position.set(0, 0, z);
+      return belt;
+    },
+    creatBelt(index) {
+      let { length, width, z, num, position, obj } = this.params;
+      let belt = this.setTexture(length, width, z, num, position, obj);
+      this.trackGroup.children[index].add(belt);
     }
   }
 };
