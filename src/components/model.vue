@@ -1,15 +1,6 @@
 <template>
   <div id="hello">
-    <div>
-      <input type="text" v-model="params.length" />
-      <input type="text" v-model="params.width" />
-      <input type="text" v-model="params.z" />
-      <input type="text" v-model="params.num" />
-      <input type="text" v-model="params.position" />
-      <button @click="creatBelt(0)">111</button>
-      <button @click="creatBelt(1)">222</button>
-      <button @click="creatBelt(2)">333</button>
-    </div>
+    <div></div>
   </div>
 </template>
 
@@ -35,15 +26,7 @@ export default {
       clock: new THREE.Clock(),
       FPS: 45,
       timeS: 0,
-      trackGroup: null,
-      params: {
-        length: 381,
-        width: 5,
-        z: 1,
-        num: 100,
-        position: 'Left',
-        obj: null
-      }
+      trackGroup: null
     };
   },
   mounted() {
@@ -96,8 +79,8 @@ export default {
       this.createBgc();
       this.createLight();
       this.createRender();
-      this.render();
       this.creatTrack();
+      this.render();
     },
     createScene() {
       this.scene = new THREE.Scene();
@@ -212,6 +195,9 @@ export default {
           this.water.material.uniforms['time'].value +=
             1.0 / 60 / (this.FPS / 60);
         }
+        if (this.trackGroup) {
+          this.timerRail();
+        }
         this.timeS = 0;
       }
     },
@@ -251,27 +237,33 @@ export default {
       // 删除场景对象scene的子对象group
       this.scene.remove(obj);
     },
+    drawTrack(length, width, x, z, position) {
+      const geo = new THREE.BoxGeometry(length, width, 1);
+      const material = new THREE.MeshLambertMaterial({ color: 0xcccccc });
+      const track = new THREE.Mesh(geo, material);
+      track.rotation.x = -Math.PI / 2;
+      track.position.set(x, 10, z);
+      this.trackGroup.add(track);
+      const obj = this.setTexture(length, width, 1, length, position);
+      this.$set(obj, 'railPosition', position);
+      track.add(obj);
+      this.scene.add(this.trackGroup);
+      return obj;
+    },
     creatTrack() {
       this.trackGroup = new THREE.Group();
       this.trackGroup.name = 'track';
-      let track1, track2, track3;
-      track1 = new THREE.Mesh(
-        new THREE.BoxGeometry(381, 5, 1),
-        new THREE.MeshBasicMaterial({ color: 0x000000 })
-      );
-      track2 = track1.clone();
-      track3 = new THREE.Mesh(
-        new THREE.BoxGeometry(295, 5, 1),
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
-      );
-      track1.rotation.x = -Math.PI / 2;
-      track1.position.set(-94, 10, -119);
-      track2.rotation.x = -Math.PI / 2;
-      track2.position.set(-94, 10, -170);
-      track3.rotation.x = -Math.PI / 2;
-      track3.position.set(-45, 10, -229);
-      this.trackGroup.add(track1, track2, track3);
-      this.scene.add(this.trackGroup);
+      this.drawTrack(380, 5, -95, -120, 'Right');
+      this.drawTrack(380, 5, -95, -170, 'Right');
+      this.drawTrack(295, 5, -45, -230, 'Left');
+    },
+    timerRail() {
+      this.trackGroup.children.forEach((obj) => {
+        if (obj.type === 'Mesh') {
+          obj.children[0].material.map.offset.x +=
+            obj.children[0].railPosition === 'Right' ? -0.05 : 0.05;
+        }
+      });
     },
     /**
      * @description: 添加皮带
@@ -304,11 +296,6 @@ export default {
       }
       belt.position.set(0, 0, z);
       return belt;
-    },
-    creatBelt(index) {
-      let { length, width, z, num, position, obj } = this.params;
-      let belt = this.setTexture(length, width, z, num, position, obj);
-      this.trackGroup.children[index].add(belt);
     }
   }
 };
