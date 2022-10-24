@@ -26,7 +26,8 @@ export default {
       clock: new THREE.Clock(),
       FPS: 45,
       timeS: 0,
-      trackGroup: null
+      trackGroup: null,
+      dlList: []
     };
   },
   mounted() {
@@ -75,7 +76,7 @@ export default {
       this.createScene();
       this.createCamera();
 
-      //   await this.create();
+      await this.creatDL();
       this.createBgc();
       this.createLight();
       this.createRender();
@@ -138,13 +139,23 @@ export default {
       const renderTarget = pmremGenerator.fromScene(sky);
       this.scene.environment = renderTarget.texture;
     },
-    async create() {
-      //   const fbxLoader = new FBXLoader();
-      //   const fbx = await fbxLoader.loadAsync('../static/models/syg06.fbx');
-      //   fbx.rotateX(-Math.PI / 2);
-      //   fbx.translateY(1);
-      //   fbx.scale.set(0.1, 0.1, 0.1);
-      //   this.scene.add(fbx);
+    async create(i, x, y, z) {
+      const fbxLoader = new FBXLoader();
+      const fbx = await fbxLoader.loadAsync(
+        `../static/models/dushangang${i}.fbx`
+      );
+      // fbx.rotateX(-Math.PI / 2);
+      this.dlList.push(fbx);
+      fbx.position.set(x, y, z);
+      fbx.scale.set(0.1, 0.1, 0.1);
+      this.scene.add(fbx);
+      console.log(fbx);
+    },
+    creatDL() {
+      this.create('1206(1)', 1, 20, -120);
+      this.create('1207', -200, 20, -120);
+      this.create('1208', 1, 20, -170);
+      this.create('1209', -200, 20, -170);
     },
     createLight() {
       const direLight = new THREE.DirectionalLight(0xffffff, 1.0); // 平行光 DirectionalLight (光源颜色的RGB数值, 光源强度数值)
@@ -297,6 +308,34 @@ export default {
       belt.position.set(0, 0, z);
       return belt;
     }
+
+    // async runMac() {
+    //   this.statusData = (await getDljRunningInfo(this.selectTime)).result[0] //{ dateTime: date && this.moment(date).format('yyyyMMddhh')}
+    //   this.statusData.forEach((item, index) => {
+    //     this.setRotation(this.macList[index].xuanzhuanObject, item.hzjd, 'y')
+    //     this.setRotation(this.macList[index].fuyangObject, item.fyjd, 'z')
+    //     this.setPosition(this.macList[index].allObject, item.dljwz)
+    //   })
+    // },
+    /**
+     * @description: 设置传入对象旋转角度
+     * @param {*} obj 对象
+     * @param {*} r 角度
+     * @param {*} p 旋转轴
+     * @return {*}
+     */
+    // setRotation(obj, r, p) {
+    //   obj.rotation[p] = -(r * Math.PI) / 180;
+    // },
+    /**
+     * @description: 设置传入对象移动位置
+     * @param {*} obj 对象
+     * @param {*} position 位置
+     * @return {*}
+     */
+    // setPosition(obj, position) {
+    //   obj.position.x = -this.coalYardLength / 2 + position;
+    // }
   }
 };
 </script>
