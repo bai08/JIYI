@@ -308,34 +308,6 @@ export default {
       belt.position.set(0, 0, z);
       return belt;
     }
-
-    // async runMac() {
-    //   this.statusData = (await getDljRunningInfo(this.selectTime)).result[0] //{ dateTime: date && this.moment(date).format('yyyyMMddhh')}
-    //   this.statusData.forEach((item, index) => {
-    //     this.setRotation(this.macList[index].xuanzhuanObject, item.hzjd, 'y')
-    //     this.setRotation(this.macList[index].fuyangObject, item.fyjd, 'z')
-    //     this.setPosition(this.macList[index].allObject, item.dljwz)
-    //   })
-    // },
-    /**
-     * @description: 设置传入对象旋转角度
-     * @param {*} obj 对象
-     * @param {*} r 角度
-     * @param {*} p 旋转轴
-     * @return {*}
-     */
-    // setRotation(obj, r, p) {
-    //   obj.rotation[p] = -(r * Math.PI) / 180;
-    // },
-    /**
-     * @description: 设置传入对象移动位置
-     * @param {*} obj 对象
-     * @param {*} position 位置
-     * @return {*}
-     */
-    // setPosition(obj, position) {
-    //   obj.position.x = -this.coalYardLength / 2 + position;
-    // }
   }
 };
 </script>
