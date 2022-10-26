@@ -76,7 +76,7 @@ export default {
       this.createScene();
       this.createCamera();
 
-      await this.creatDL();
+      await this.create();
       this.createBgc();
       this.createLight();
       this.createRender();
@@ -139,23 +139,59 @@ export default {
       const renderTarget = pmremGenerator.fromScene(sky);
       this.scene.environment = renderTarget.texture;
     },
-    async create(i, x, y, z) {
-      const fbxLoader = new FBXLoader();
-      const fbx = await fbxLoader.loadAsync(
-        `../static/models/dushangang${i}.fbx`
-      );
-      // fbx.rotateX(-Math.PI / 2);
-      this.dlList.push(fbx);
-      fbx.position.set(x, y, z);
-      fbx.scale.set(0.1, 0.1, 0.1);
-      this.scene.add(fbx);
-      console.log(fbx);
-    },
-    creatDL() {
-      this.create('1206(1)', 1, 20, -120);
-      this.create('1207', -200, 20, -120);
-      this.create('1208', 1, 20, -170);
-      this.create('1209', -200, 20, -170);
+    async create() {
+      for (let i = 0; i < 4; i++) {
+        const fbxLoader = new FBXLoader();
+        this.dlList.push({});
+        this.dlList[i].allObject = await fbxLoader.loadAsync(
+          `../static/models/dushangang1206.fbx`
+        );
+        console.log(this.dlList[i]);
+        this.dlList[i].allObject.scale.set(0.1, 0.1, 0.1);
+        this.dlList[i].xuanzhuanObject = this.dlList[i].allObject.children.find(
+          (item) => item.name.indexOf('xuanzhuan') > -1
+        );
+        this.dlList[i].fuyangObject = this.dlList[
+          i
+        ].xuanzhuanObject.children.find(
+          (item) => item.name.indexOf('fuyang') > -1
+        );
+        const xuanbi = this.dlList[i].fuyangObject.children.find(
+          (item) => item.name.indexOf('xuanbi') > -1
+        );
+        const belt = xuanbi.children.find(
+          (item) => item.name.indexOf('pidai') > -1
+        );
+        let beltBox = new THREE.Box3().setFromObject(belt);
+        // console.log(beltBox);
+        const obj = this.setTexture(
+          beltBox.max.x - beltBox.min.x,
+          beltBox.max.z - beltBox.min.z,
+          0,
+          beltBox.max.x - beltBox.min.x,
+          'Left',
+          belt
+        );
+        this.dlList[i].beltBox = {
+          X: beltBox.max.x - beltBox.min.x,
+          Z: beltBox.max.z - beltBox.min.z
+        };
+        obj.position.set(0, beltBox.max.y - beltBox.min.y + 1, 0);
+        // obj.rotation.set(-0.5 * Math.PI, 0, 0);
+        obj.positionStatus = 1;
+        this.dlList[i].macBelt = obj;
+        belt.add(obj);
+        this.dlList[i].doulunObject = this.dlList[i].fuyangObject.children.find(
+          (item) => item.name.indexOf('doulun') > -1
+        );
+        this.scene.add(this.dlList[i].allObject);
+        this.dlList[i].allObject.position.set(
+          i % 2 === 0 ? 1 : -200,
+          20,
+          i < 2 ? -120 : -170
+        );
+      }
+      // this.runMac();
     },
     createLight() {
       const direLight = new THREE.DirectionalLight(0xffffff, 1.0); // 平行光 DirectionalLight (光源颜色的RGB数值, 光源强度数值)
@@ -206,9 +242,7 @@ export default {
           this.water.material.uniforms['time'].value +=
             1.0 / 60 / (this.FPS / 60);
         }
-        if (this.trackGroup) {
-          this.timerRail();
-        }
+        this.timerRail();
         this.timeS = 0;
       }
     },
@@ -275,6 +309,10 @@ export default {
             obj.children[0].railPosition === 'Right' ? -0.05 : 0.05;
         }
       });
+      this.dlList.forEach((item) => {
+        item.macBelt.material.map.offset.x +=
+          item.macBelt.positionStatus === 1 ? 0.05 : -0.05;
+      });
     },
     /**
      * @description: 添加皮带
@@ -307,6 +345,33 @@ export default {
       }
       belt.position.set(0, 0, z);
       return belt;
+    },
+    async runMac() {
+      this.statusData = (await getDljRunningInfo(this.selectTime)).result[0]; //{ dateTime: date && this.moment(date).format('yyyyMMddhh')}
+      this.statusData.forEach((item, index) => {
+        this.setRotation(this.dlList[index].xuanzhuanObject, item.hzjd, '100');
+        this.setRotation(this.dlList[index].fuyangObject, item.fyjd, '100');
+        this.setPosition(this.dlList[index].allObject, item.dljwz);
+      });
+    },
+    /**
+     * @description: 设置传入对象旋转角度
+     * @param {*} obj 对象
+     * @param {*} r 角度
+     * @param {*} p 旋转轴
+     * @return {*}
+     */
+    setRotation(obj, r, p) {
+      obj.rotation[p] = -(r * Math.PI) / 180;
+    },
+    /**
+     * @description: 设置传入对象移动位置
+     * @param {*} obj 对象
+     * @param {*} position 位置
+     * @return {*}
+     */
+    setPosition(obj, position) {
+      obj.position.x = -500 / 2 + position;
     }
   }
 };
