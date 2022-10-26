@@ -148,18 +148,20 @@ export default {
         );
         console.log(this.dlList[i]);
         this.dlList[i].allObject.scale.set(0.1, 0.1, 0.1);
-        this.dlList[i].xuanzhuanObject = this.dlList[i].allObject.children.find(
-          (item) => item.name.indexOf('xuanzhuan') > -1
+        this.dlList[i].zuoyouObject = this.dlList[i].allObject.children.find(
+          (item) => item.name.indexOf('zuoyou') > -1
         );
-        this.dlList[i].fuyangObject = this.dlList[
+        this.dlList[i].shangxiaObject = this.dlList[
           i
-        ].xuanzhuanObject.children.find(
-          (item) => item.name.indexOf('fuyang') > -1
+        ].zuoyouObject.children.find(
+          (item) => item.name.indexOf('shangxia') > -1
         );
-        const xuanbi = this.dlList[i].fuyangObject.children.find(
+        this.dlList[i].xuanbiObject = this.dlList[
+          i
+        ].shangxiaObject.children.find(
           (item) => item.name.indexOf('xuanbi') > -1
         );
-        const belt = xuanbi.children.find(
+        const belt = this.dlList[i].xuanbiObject.children.find(
           (item) => item.name.indexOf('pidai') > -1
         );
         let beltBox = new THREE.Box3().setFromObject(belt);
@@ -180,8 +182,10 @@ export default {
         // obj.rotation.set(-0.5 * Math.PI, 0, 0);
         obj.positionStatus = 1;
         this.dlList[i].macBelt = obj;
-        belt.add(obj);
-        this.dlList[i].doulunObject = this.dlList[i].fuyangObject.children.find(
+        // belt.add(obj);
+        this.dlList[i].doulunObject = this.dlList[
+          i
+        ].shangxiaObject.children.find(
           (item) => item.name.indexOf('doulun') > -1
         );
         this.scene.add(this.dlList[i].allObject);
