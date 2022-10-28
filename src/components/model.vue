@@ -76,7 +76,7 @@ export default {
       this.createScene();
       this.createCamera();
 
-      await this.create();
+      await this.creatDL();
       this.createBgc();
       this.createLight();
       this.createRender();
@@ -139,62 +139,65 @@ export default {
       const renderTarget = pmremGenerator.fromScene(sky);
       this.scene.environment = renderTarget.texture;
     },
-    async create() {
-      for (let i = 0; i < 4; i++) {
-        const fbxLoader = new FBXLoader();
-        this.dlList.push({});
-        this.dlList[i].allObject = await fbxLoader.loadAsync(
-          `../static/models/dushangang1206.fbx`
-        );
-        console.log(this.dlList[i]);
-        this.dlList[i].allObject.scale.set(0.1, 0.1, 0.1);
-        this.dlList[i].zuoyouObject = this.dlList[i].allObject.children.find(
-          (item) => item.name.indexOf('zuoyou') > -1
-        );
-        this.dlList[i].shangxiaObject = this.dlList[
-          i
-        ].zuoyouObject.children.find(
-          (item) => item.name.indexOf('shangxia') > -1
-        );
-        this.dlList[i].xuanbiObject = this.dlList[
-          i
-        ].shangxiaObject.children.find(
-          (item) => item.name.indexOf('xuanbi') > -1
-        );
-        const belt = this.dlList[i].xuanbiObject.children.find(
-          (item) => item.name.indexOf('pidai') > -1
-        );
-        let beltBox = new THREE.Box3().setFromObject(belt);
-        // console.log(beltBox);
-        const obj = this.setTexture(
-          beltBox.max.x - beltBox.min.x,
-          beltBox.max.z - beltBox.min.z,
-          0,
-          beltBox.max.x - beltBox.min.x,
-          'Left',
-          belt
-        );
-        this.dlList[i].beltBox = {
-          X: beltBox.max.x - beltBox.min.x,
-          Z: beltBox.max.z - beltBox.min.z
-        };
-        obj.position.set(0, beltBox.max.y - beltBox.min.y + 1, 0);
-        // obj.rotation.set(-0.5 * Math.PI, 0, 0);
-        obj.positionStatus = 1;
-        this.dlList[i].macBelt = obj;
-        // belt.add(obj);
-        this.dlList[i].doulunObject = this.dlList[
-          i
-        ].shangxiaObject.children.find(
-          (item) => item.name.indexOf('doulun') > -1
-        );
-        this.scene.add(this.dlList[i].allObject);
-        this.dlList[i].allObject.position.set(
-          i % 2 === 0 ? 1 : -200,
-          20,
-          i < 2 ? -120 : -170
-        );
-      }
+    creatDL() {
+      this.create('1206', 1, 20, -120);
+      this.create('1207', -200, 20, -120);
+      this.create('1208', 1, 20, -170);
+      this.create('1209', -200, 20, -170);
+    },
+    async create(index, x, y, z) {
+      // for (let i = 0; i < 4; i++) {
+      let tmpData = {};
+      const fbxLoader = new FBXLoader();
+      // this.dlList.push({});
+      tmpData.allObject = await fbxLoader.loadAsync(
+        `../static/models/dushangang${index}.fbx`
+      );
+      console.log(tmpData);
+      tmpData.allObject.scale.set(0.1, 0.1, 0.1);
+      tmpData.zuoyouObject = tmpData.allObject.children.find(
+        (item) => item.name.indexOf('zuoyou') > -1
+      );
+      tmpData.shangxiaObject = tmpData.zuoyouObject.children.find(
+        (item) => item.name.indexOf('shangxia') > -1
+      );
+      tmpData.xuanbiObject = tmpData.shangxiaObject.children.find(
+        (item) => item.name.indexOf('xuanbi') > -1
+      );
+      const belt = tmpData.xuanbiObject.children.find(
+        (item) => item.name.indexOf('pidai') > -1
+      );
+      let beltBox = new THREE.Box3().setFromObject(belt);
+      console.log(beltBox);
+      const obj = this.setTexture(
+        beltBox.max.x - beltBox.min.x,
+        beltBox.max.z - beltBox.min.z,
+        0,
+        beltBox.max.x - beltBox.min.x,
+        'Left',
+        belt
+      );
+      tmpData.beltBox = {
+        X: beltBox.max.x - beltBox.min.x,
+        Z: beltBox.max.z - beltBox.min.z
+      };
+      obj.position.set(0, beltBox.max.y - beltBox.min.y + 1, 0);
+      // obj.rotation.set(-0.5 * Math.PI, 0, 0);
+      obj.positionStatus = 1;
+      tmpData.macBelt = obj;
+      // belt.add(obj);
+      tmpData.doulunObject = tmpData.shangxiaObject.children.find(
+        (item) => item.name.indexOf('doulun') > -1
+      );
+      this.scene.add(tmpData.allObject);
+      // tmpData.allObject.position.set(
+      //   i % 2 === 0 ? 1 : -200,
+      //   20,
+      //   i < 2 ? -120 : -170
+      // );
+      tmpData.allObject.position.set(x, y, z);
+      this.dlList.push(tmpData);
+      // }
       // this.runMac();
     },
     createLight() {
